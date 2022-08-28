@@ -1,0 +1,31 @@
+mport random
+import sys
+while 1:
+    go = input('是否开始游戏，0-否，1-是')
+    if go == '0':
+        print(sys.exit())
+    elif go == '1':
+        print('*****************************************')
+        print('********1游戏开始*******2游戏退出*************')
+        a = int(input('***********1游戏开始,2游戏退出*************'))
+        if a == 1:
+            computer = random.randint(0, 2)
+            if computer == 0:
+                print('电脑出石头')
+            elif computer == 1:
+                print('电脑出剪刀')
+            else:
+                print('电脑出布')
+            player = int(input('请输入猜拳数字0-石头，1-剪刀，2-布：'))
+            if (player == 0 and computer == 1 or player == 1 and computer == 2 or player == 2 and computer == 0):
+                print("玩家胜利了")
+            elif player == computer:
+                print("平局")
+            else:
+                print("电脑胜利")
+        elif a == 2:
+            print(sys.exit())
+        else:
+            print('输入错误')
+    else:
+        print('输入错误请重新选择输入1或2')
