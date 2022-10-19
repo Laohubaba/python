@@ -1,0 +1,94 @@
+import pandas as pd
+# from IPython.display import Image
+import pydotplus
+import warnings
+#import pydot
+from sklearn.preprocessing import LabelEncoder
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import export_graphviz#生成dot文件
+from sklearn.metrics import roc_curve, auc#绘制roc曲线的函数
+
+from sklearn.metrics import accuracy_score#准确率
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+rcParams['font.family'] = 'simhei'
+warnings.filterwarnings('ignore')
+#步骤1 todo：数据读取，标签数值化处理
+
+
+def data_preprocess(): # 步骤1.1 todo：读取数据并统计数据类别信息
+    df = pd.read_csv('play_no_data.csv',sep=',')
+    print(df.describe())
+    print('外出游玩的数量：',df[df['play'] =='yes']['play'].count())
+    print('不外出游玩的数量：',df[df['play'] =='no']['play'].count())
+
+    #步骤1.2 字符数据 LabelEncoder处理
+    la = LabelEncoder() #将标签数据转为range范围
+    #print(df.columns)
+    #print(df)
+    for col in df.columns:#遍历标签以列
+        if type(df[col][0]) is str:
+            df[col] = la.fit_transform(df[col])
+    print(df)
+
+    #1.3获取特征值和目标值
+    X_train = df[df.columns[0:-1]]
+    y_train = df[['play']]
+    return X_train,y_train,df
+
+
+
+# #################
+
+
+
+#步骤2 对模型进行训练，测试
+def decision_tree_with_criterion(model,criterion,max_depth,X_train,y_train):
+    dt_model = model
+    dt_model.fit(X_train,y_train)
+    y_train_predict = dt_model.predict(X_train)
+    acc_train = accuracy_score(y_train,y_train_predict)#准准确率
+    print('决策树分类模型在训练集上的准确率为:%s,%d,%.4f' % (criterion,max_depth,acc_train))
+
+    y_train_predict_proba = dt_model.predict_proba(X_train)#预测某个标签的的概率
+    false_positive_rate,recall,threshplds = roc_curve(y_train,y_train_predict_proba[:,1])
+    roc_auc = auc(false_positive_rate,recall)#计算auc的值（fpr，召回率）
+
+
+    plt.figure()
+    plt.title("决策树分类模型(特征选择方法为{}，深度为{})的ROC-AUC图".format(criterion,max_depth))
+    plt.plot(false_positive_rate, recall, 'r', label='AUC=0.3f' % roc_auc)
+    plt.legend(loc='best')
+    plt.plot([0, 1], [0, 1], 'k-')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.0])
+    plt.xlabel("真正利率")
+    plt.ylabel("假正利率")
+    plt.savefig('ROC_AUC_decision_tree.png')
+    plt.show()
+    dot_data = export_graphviz(dt_model,
+                           out_file=None,#默认值
+                           feature_names=df.columns[0:-1],#特征名
+                           class_names=df.columns[-1],#valuse对应的最大值
+                           filled=True,
+                           rounded=True,
+                           special_characters=True)#生成dot文件
+    graph = pydotplus.graph_from_dot_data(dot_data)
+    # Image(graph.creat_png())
+    graph.write_png('decision_tree_with_{}_depth_{}.png'.format(criterion,max_depth))
+
+if __name__ == '__main__':
+    X_train, y_train, df = data_preprocess()#读取清洗数据
+    criterion_all = ['gini','entropy']
+    max_depths = [1,2,3,4]
+
+    for criterion_select in criterion_all:
+        for max_depth in max_depths:
+            model = DecisionTreeClassifier(criterion=criterion_select,max_depth=max_depth)#导入模型参数
+            decision_tree_with_criterion(model,criterion_select,max_depth,X_train,y_train)
+
+print("模型测试结束")
+
+
+
+
