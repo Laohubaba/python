@@ -1,0 +1,103 @@
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
+import warnings
+import sklearn.tree as tree
+import graphviz
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
+
+warnings.filterwarnings('ignore')
+from sklearn.model_selection import  train_test_split
+from sklearn.metrics import precision_score,recall_score,f1_score,accuracy_score
+from sklearn.metrics import roc_curve,roc_auc_score
+import matplotlib.pyplot as plt
+from matplotlib import rcParams  # 图形属性配置
+rcParams['font.family'] = 'simhei'  # 可以让图像中显示中文（黑体）
+
+data=pd.read_csv("breast-cancer-wisconsin.data",sep=',')
+print(data)
+data=data.drop_duplicates()
+#异常值处理
+#print（data.sahpe）
+#print（data【600：630】
+data = data[data != "?"]#处理问号的
+data = data.fillna(method="pad",axis=0)#用前一个非缺失值去填充该缺失值
+print(data.shape)
+
+X = data.iloc[:,1:-1]#去除第一列和最后一列第
+y = data.iloc[:,-1]
+#数据替换
+
+y[y==2] = 0
+y[y==4] = 1
+print(data)
+#训练集和测试集划分
+X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, random_state=3)
+
+#clf = DecisionTreeClassifier(criterion='entropy')
+#clf = DecisionTreeClassifier(criterion='gini')
+clf = DecisionTreeClassifier(criterion='entropy',max_depth=10)
+clf1 = DecisionTreeClassifier(max_depth=5)
+
+#对数据进行训练
+clf.fit(X_train, y_train)
+clf1.fit(X_train, y_train)
+#模型预测
+y_test_predict = clf.predict(X_test)
+y_test_predict1 = clf1.predict(X_test)
+
+#评价指标
+print('ID3算法准确率评价指标：',accuracy_score(y_test,y_test_predict))
+print('ID3算法精确率评价指标：',precision_score(y_test, y_test_predict))
+print('ID3算法召回率评价指标：',recall_score(y_test, y_test_predict))
+print('ID3算法F1系数评价指标：',f1_score(y_test, y_test_predict))
+print('ID3算法决定系数R2评价指标：',clf.score(X_test,y_test))
+print('ID3算法各个特征的重要程度：',clf.feature_importances_)
+
+
+print('CART算法准确率评价指标：',accuracy_score(y_test,y_test_predict1))
+print('CART算法精确率评价指标：',precision_score(y_test, y_test_predict1))
+print('CART算法召回率评价指标：',recall_score(y_test, y_test_predict1))
+print('CART算法F1系数评价指标：',f1_score(y_test, y_test_predict1))
+print('CART算法决定系数R2评价指标：',clf.score(X_test,y_test))
+print('CART算法各个特征的重要程度：',clf.feature_importances_)
+
+
+print("ID3算法/CART算法auc面积：",roc_auc_score(y_test,y_test_predict),roc_auc_score(y_test,y_test_predict1))
+#获取决策树深度
+print("ID3算法树深度：",clf.get_depth())
+print("CART算法树深度：",clf1.get_depth())
+
+#画出决策树
+dot_data = tree.export_graphviz(clf1, out_file=None)
+graph = graphviz.Source(dot_data).view()
+
+#图标绘制
+
+
+#ROC曲线
+fpr,tpr,thresholds = roc_curve(y_test,y_test_predict)
+fpr1,tpr1,thresholds = roc_curve(y_test,y_test_predict1)
+plt.plot(fpr,tpr,label='ROC',color='darkorange',linestyle = '--')
+plt.plot(fpr1,tpr1,label='ROC',color='green',linestyle = '--')
+plt.xlim([0, 1])
+plt.ylim([0, 1])
+plt.title('ROC曲线')
+plt.xlabel('FPR')
+plt.ylabel('TPR')
+plt.legend()
+plt.show()
+
+#折线图
+plt.plot(range(len(y_test)),y_test,'r')
+plt.plot(range(len(y_test_predict)),y_test_predict,'g')
+plt.title("真实分类和测试分类的折线图")
+plt.xlabel("数量")
+plt.ylabel("分类")
+plt.legend(["真实","测试"])
+plt.show()
+#散点图
+
+plt.scatter(range(len(y_test)),y_test,c='r',marker='o')
+plt.scatter(range(len(y_test_predict)),y_test_predict,c='g',marker='x')
+plt.show()
